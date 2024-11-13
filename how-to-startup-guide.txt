@@ -1,0 +1,8 @@
+cd into frontend to startup frontend
+npm install into frontend to install node_modules 
+run command npm run dev
+
+//to start server 
+npm install
+npm start to node ./index.js through nodemon
+make sure server runs on 8080
