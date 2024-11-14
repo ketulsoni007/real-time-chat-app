@@ -1,12 +1,19 @@
+-->Github Repository Link
+https://github.com/ketulsoni007/real-time-chat-app.git
+gh repo clone ketulsoni007/real-time-chat-app
+-----------------------------------------------------------------------------------------------------------------------------
+-->Tested On Locales
+https://www.awesomescreenshot.com/video/33616519?key=1d7a4c5f3b5d2b5da3c42c4654728c0c
+-----------------------------------------------------------------------------------------------------------------------------
+-->to start server
+npm install to install node_modules 
+npm start to node ./index.js through nodemon
+make sure server runs on 8080
+-----------------------------------------------------------------------------------------------------------------------------
+-->to start frontend
 cd into frontend to startup frontend
 npm install into frontend to install node_modules 
 run command npm run dev
 make sure frontend runs on 5173
-
-//to start server 
-npm install to install node_modules 
-npm start to node ./index.js through nodemon
-make sure server runs on 8080
-
-//Tested On Locales
-https://www.awesomescreenshot.com/video/33616519?key=1d7a4c5f3b5d2b5da3c42c4654728c0c
+-----------------------------------------------------------------------------------------------------------------------------
+If you encounter any issues or get stuck at any point, feel free to reach out, and I’ll guide you through how to resolve them.
