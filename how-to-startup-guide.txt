@@ -1,3 +1,5 @@
+Here is the real-time chat application featuring both group and one-on-one messaging, powered by Socket.IO for real-time communication.  
+-----------------------------------------------------------------------------------------------------------------------------
 -->Github Repository Link
 https://github.com/ketulsoni007/real-time-chat-app.git
 gh repo clone ketulsoni007/real-time-chat-app
@@ -6,13 +8,13 @@ gh repo clone ketulsoni007/real-time-chat-app
 https://www.awesomescreenshot.com/video/33616519?key=1d7a4c5f3b5d2b5da3c42c4654728c0c
 -----------------------------------------------------------------------------------------------------------------------------
 -->to start server
-npm install to install node_modules 
+npm install to install node_modules
 npm start to node ./index.js through nodemon
 make sure server runs on 8080
 -----------------------------------------------------------------------------------------------------------------------------
 -->to start frontend
 cd into frontend to startup frontend
-npm install into frontend to install node_modules 
+npm install into frontend to install node_modules
 run command npm run dev
 make sure frontend runs on 5173
 -----------------------------------------------------------------------------------------------------------------------------
