@@ -1,5 +1,3 @@
-import axios from "axios";
-import config from "../config";
 import { appAxios } from "./appAxios";
 
 const groupCreate = (values) => {

@@ -11,7 +11,7 @@ appAxios.interceptors.request.use(
         const tokenData = storage ? JSON.parse(storage) : {};
         let token = tokenData?.isToken || null;
         if (token) {
-            token = token.replace(/^"|"$/g, ''); // Remove leading and trailing quotes
+            token = token.replace(/^"|"$/g, '');
         }
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;

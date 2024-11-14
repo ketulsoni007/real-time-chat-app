@@ -125,7 +125,6 @@ export const getAllUserController = async (req, res) => {
     }
 };
 
-
 export const testController = async (req, res) => {
     try {
         const { userId } = req;  // Directly access req.userId

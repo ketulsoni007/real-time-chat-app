@@ -2,69 +2,7 @@ import chatSchema from "../models/Chat.js";
 import messageSchema from "../models/Message.js";
 import userSchema from "../models/User.js";
 import { io } from "../index.js";
-
-// export const sendMessageController = async (req, res) => {
-//   try {
-//     const { userId } = req;
-//     const { content, isGroupChat, receiver,groupId } = req.body;
-//     if (isGroupChat == true || isGroupChat === 'true') {
-//       const groupChat = await chatSchema.findById(groupId).populate('users');
-//       if (!groupChat) {
-//         return res.status(404).json({ message: "Group chat not found" });
-//       }
-//       const newMessage = new messageSchema({
-//         sender: userId,
-//         content,
-//         chatId: groupChat?._id, // Group chat ID
-//       });
-
-//       // Save the new message to the database
-//       await newMessage.save();
-
-//       // Update the latestMessage field in the chat document
-//       groupChat.latestMessage = newMessage._id;
-//       await groupChat.save();
-
-//       return res.status(200).json({ message: "Message sent successfully", data: newMessage });
-//     } 
-//     // For 1-on-1 (personal) chat
-//     else {
-//       // Check if a chat already exists between the two users
-//       let personalChat = await chatSchema.findOne({
-//         isGroupChat: false,
-//         users: { $all: [userId, receiver] },
-//       });
-
-//       // If no existing chat, create a new chat between the two users
-//       if (!personalChat) {
-//         personalChat = new chatSchema({
-//           isGroupChat: false,
-//           users: [userId, receiver],
-//         });
-//         await personalChat.save();
-//       }
-
-//       // Create a new message document
-//       const newMessage = new messageSchema({
-//         sender: userId,
-//         content,
-//         chatId: personalChat._id, // Personal chat ID
-//       });
-
-//       // Save the new message to the database
-//       await newMessage.save();
-
-//       // Update the latestMessage field in the chat document
-//       personalChat.latestMessage = newMessage._id;
-//       await personalChat.save();
-
-//       return res.status(200).json({ message: "Message sent successfully", data: newMessage });
-//     }
-//   } catch (error) {
-//     console.error(error);
-//     return res.status(500).json({ message: "Error sending message", error });
-//   }
-// };
+import mongoose from "mongoose";
 
 export const sendMessageController = async (req, res) => {
   try {
@@ -131,7 +69,15 @@ export const sendMessageController = async (req, res) => {
     await personalChat.save();
 
     // Emit the message to the specific receiver's room
-    io.to(receiver).emit("receive_message", {
+    // io.to(receiver).emit("receive_message", {
+    //   _id: newMessage._id,
+    //   sender: { _id: userId },
+    //   content,
+    //   createdAt: newMessage.createdAt,
+    //   isGroupChat: false,
+    //   chatId: personalChat._id,
+    // });
+    io.to(userId).to(receiver).emit("receive_message", {
       _id: newMessage._id,
       sender: { _id: userId },
       content,
@@ -258,19 +204,65 @@ export const getGroupChatHistoryController = async (req, res) => {
 
 export const groupCreateController = async (req, res) => {
   try {
-    const { name, participants } = req.body;
-
+    const { _id,name, participants } = req.body;
+    const { userId } = req;
     const allParticipants = participants ? JSON.parse(participants) : [];
+    if (_id && mongoose.Types.ObjectId.isValid(_id)) {
+      const groupChat = await chatSchema.findById(_id);
+      if (!groupChat) {
+        return res.status(410).json({ message: "Group not found." });
+      }
+      
+      if (groupChat.groupAdmin.toString() !== userId) {
+        return res.status(403).json({ message: "You are not authorized to update this group." });
+      }
+    
+      // Update group name if provided
+      if (name) {
+        groupChat.groupName = name;
+        await groupChat.save(); // Save the group chat to persist the name change
+      }
+    
+      // Ensure the user is part of the participants
+      if (!allParticipants.includes(userId)) {
+        allParticipants.push(userId);
+      }
+    
+      // If there are participants, update the users
+      if (allParticipants.length > 0) {
+        // Add new participants if not already in the group
+        await chatSchema.updateOne(
+          { _id: groupChat._id },
+          {
+            $addToSet: { users: { $each: allParticipants } } // Add participants if they don't exist
+          }
+        );
+    
+        // Remove participants who are no longer in the updated list
+        await chatSchema.updateOne(
+          { _id: groupChat._id },
+          {
+            $pull: { users: { $nin: allParticipants } } // Remove participants who aren't in the updated list
+          }
+        );
+      }
+    
+      // Fetch the updated group chat after the name and participants are updated
+      const updatedGroupChat = await chatSchema.findById(groupChat._id);
+    
+      return res.status(200).json({
+        message: "Group chat updated successfully!",
+        groupChat: updatedGroupChat,
+      });
+    }
 
     if (!name || allParticipants.length === 0) {
       return res.status(400).json({ message: "Group name and participants are required." });
     }
 
     // Ensure the user who created the group is part of the participants
-    const { userId } = req;
-    allParticipants.push(userId); // Add the current user if not already present
-    console.log('allParticipants: ', allParticipants);
-    console.log('userId: ', userId);
+   
+    allParticipants.push(userId);
 
     // Create the new group chat
     const newGroupChat = new chatSchema({
@@ -298,7 +290,7 @@ export const groupCreateController = async (req, res) => {
     await savedGroupChat.save();
 
     // Send response with the created group chat
-    return res.status(201).json({
+    return res.status(200).json({
       message: "Group chat created successfully!",
       groupChat: savedGroupChat,
     });

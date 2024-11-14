@@ -79,6 +79,7 @@ const initialState = {
   isSelectedUser: "",
   isChatList: {},
   isChatHistory: [],
+  isGroupModelData:{},
   isApiStatus: {
     groupCreateApi: "",
     chatListApi: "",
@@ -95,6 +96,9 @@ const chatSlice = createSlice({
     OpenGroupModel: (state, action) => {
       state.isOpenGroupModel = action.payload;
     },
+    GroupModelData: (state, action) => {
+      state.isGroupModelData = action.payload;
+    },
     SelectedUser: (state, action) => {
       state.isSelectedUser = action.payload._id;
       state.isGroupChat = action.payload.group;
@@ -103,12 +107,9 @@ const chatSlice = createSlice({
       const existingMessageIndex = state.isChatHistory.findIndex(
         (message) => message._id === action.payload._id
       );
-    
       if (existingMessageIndex !== -1) {
-        // If message exists, update it
         state.isChatHistory[existingMessageIndex] = action.payload;
       } else {
-        // If message doesn't exist, push it to the array
         state.isChatHistory.push(action.payload);
       }
     },
@@ -158,5 +159,5 @@ const chatSlice = createSlice({
   },
 });
 
-export const { reset, OpenGroupModel, SelectedUser,MergeChats } = chatSlice.actions;
+export const { reset, OpenGroupModel, SelectedUser,MergeChats,GroupModelData } = chatSlice.actions;
 export default chatSlice.reducer;

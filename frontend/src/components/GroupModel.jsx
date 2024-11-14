@@ -1,20 +1,11 @@
-import {
-  Avatar,
-  Box,
-  Button,
-  Modal,
-  Typography,
-  Grid,
-  Divider,
-  TextField,
-} from '@mui/material';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Avatar, Box, Button, Modal, Typography, Grid, Divider, TextField } from '@mui/material';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { useDispatch, useSelector } from 'react-redux';
 import useWindowWidth from '../../hooks/window';
 import { userListApi } from '../store/Slices/authSlice';
-import { groupCreateApi, OpenGroupModel } from '../store/Slices/chatSlice';
+import { chatListApi, groupCreateApi, OpenGroupModel } from '../store/Slices/chatSlice';
 
 const validationSchema = Yup.object({
   name: Yup.string().required('Group Name is required'),
@@ -26,23 +17,39 @@ const GroupModel = () => {
   const dispatch = useDispatch();
   const [message, setMessage] = useState('');
   const isOpenGroupModel = useSelector((state) => state.chat.isOpenGroupModel);
+  const isGroupModelData = useSelector((state) => state.chat.isGroupModelData);
   const isUserList = useSelector((state) => state.auth.isUserList);
 
   // State to track selected user IDs
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [userName, setUserName] = useState('');
 
-  const initialValues = {
-    name: '',
-    participants: [],
-  };
+  const initialValues = useMemo(() => {
+    if (isGroupModelData) {
+      const participants = isGroupModelData.users?.map(user => user._id) || [];
+      return {
+        _id: isGroupModelData?._id || null,
+        name: isGroupModelData.groupName || '',
+        participants: participants,
+      };
+    }
+
+    return { _id: null, name: '', participants: [] };
+  }, [isGroupModelData]);
+
+  // Initialize selectedUsers based on participants in initialValues
+  useEffect(() => {
+    if (initialValues.participants?.length > 0) {
+      setSelectedUsers(initialValues.participants);
+    }
+  }, [initialValues]);
 
   const handleSubmit = async (values, { setSubmitting, setErrors }) => {
-    console.log('values: ', values);
     try {
       dispatch(groupCreateApi(values)).then(action => {
         if (action.meta.requestStatus === 'fulfilled') {
-          navigate('/');
+          dispatch(OpenGroupModel(false));
+          dispatch(chatListApi({}));
         } else if (action.meta.requestStatus === 'rejected') {
           const errors = action?.payload?.errors ?? {};
           const message = action?.payload?.message ?? '';
@@ -54,7 +61,7 @@ const GroupModel = () => {
             }, {});
             setErrors(formErrors);
           } else if (status === 410) {
-            setMessage(message || 'An Error occured');
+            setMessage(message || 'An Error occurred');
           }
         }
       });
@@ -82,8 +89,8 @@ const GroupModel = () => {
 
   // Fetch user list dynamically
   useEffect(() => {
-    dispatch(userListApi({ name: userName }));
-  }, [userName, dispatch]);
+    dispatch(userListApi({ name: '' }));
+  }, [dispatch]);
 
   // Toggle user selection
   const toggleUserSelection = (userId, setFieldValue) => {
@@ -113,33 +120,16 @@ const GroupModel = () => {
         onSubmit={handleSubmit}
       >
         {({ setFieldValue, touched, errors, values }) => {
-          console.log('values: ', values);
           return (
             <Form>
               <Box sx={style}>
-                <Box
-                  sx={{
-                    p: 2,
-                    borderBottom: '1px solid #ddd',
-                    textAlign: 'center',
-                    flexShrink: 0,
-                  }}
-                >
+                <Box sx={{ p: 2, borderBottom: '1px solid #ddd', textAlign: 'center', flexShrink: 0 }}>
                   <Typography variant="h6" component="h2">
-                    Create Group
+                    {values?._id ? 'Update Group' : 'Create Group'}
                   </Typography>
-                  <Typography sx={{ mt: 1, mb: 1 }}>
-                    Create Group - Select Users to include
-                  </Typography>
+                  <Typography sx={{ mt: 1, mb: 1 }}>{values?._id ? 'Update Group' : 'Create Group'} - Select Users to include</Typography>
                 </Box>
-                <Box
-                  sx={{
-                    flexGrow: 1,
-                    overflowY: 'auto',
-                    padding: 2,
-                  }}
-                >
-
+                <Box sx={{ flexGrow: 1, overflowY: 'auto', padding: 2 }}>
                   <Grid container spacing={2}>
                     <Grid xs={12} pl={2} py={2}>
                       <Field
@@ -163,7 +153,7 @@ const GroupModel = () => {
                         onChange={(e) => setUserName(e.target.value)}
                       />
                     </Grid>
-                    {isUserList && isUserList?.length > 0 ? isUserList?.map((user) => (
+                    {isUserList?.length > 0 ? isUserList.map((user) => (
                       <Grid
                         item
                         xs={12}
@@ -186,49 +176,23 @@ const GroupModel = () => {
                         <Avatar>{user.user_name.charAt(0)}</Avatar>
                         <Box>
                           <Typography variant="body1">{user.user_name}</Typography>
-                          <Typography variant="body2" color="textSecondary">
-                            {user.email}
-                          </Typography>
+                          <Typography variant="body2" color="textSecondary">{user.email}</Typography>
                         </Box>
                       </Grid>
                     )) : (
-                      <Grid
-                        item
-                        xs={12}
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: 2,
-                          padding: 1,
-                          overflowX: 'hidden',
-                        }}
-                      >
+                      <Grid item xs={12} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, padding: 1, overflowX: 'hidden' }}>
                         <Avatar>N/A</Avatar>
                         <Box>
                           <Typography variant="body1">No User Found</Typography>
-                          <Typography variant="body2" color="textSecondary">
-                            No user found by this name
-                          </Typography>
+                          <Typography variant="body2" color="textSecondary">No user found by this name</Typography>
                         </Box>
                       </Grid>
                     )}
                   </Grid>
-
                 </Box>
                 <Divider />
-                <Box
-                  sx={{
-                    p: 2,
-                    display: 'flex',
-                    justifyContent: 'flex-end',
-                    gap: 2,
-                    flexShrink: 0,
-                  }}
-                >
-                  {message ? (
-                    <Typography variant='body2' color='error'>{message}</Typography>
-                  ) : null}
+                <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end', gap: 2, flexShrink: 0 }}>
+                  {message && <Typography variant="body2" color="error">{message}</Typography>}
                   <Button
                     variant="outlined"
                     sx={{
@@ -259,12 +223,12 @@ const GroupModel = () => {
                       },
                     }}
                   >
-                    Create
+                    Save
                   </Button>
                 </Box>
               </Box>
             </Form>
-          )
+          );
         }}
       </Formik>
     </Modal>

@@ -1,4 +1,4 @@
-import { Avatar, List, ListItem, ListItemIcon, ListItemText, Typography } from '@mui/material';
+import { Avatar, List, ListItem, ListItemIcon, ListItemText, Skeleton, Typography } from '@mui/material';
 import React from 'react'
 import { useDispatch, useSelector } from 'react-redux';
 import { chatHistoryApi, SelectedUser } from '../store/Slices/chatSlice';
@@ -6,16 +6,26 @@ import { chatHistoryApi, SelectedUser } from '../store/Slices/chatSlice';
 const ListUser = () => {
   const dispatch = useDispatch();
     const isChatList = useSelector((state) => state.chat.isChatList);
+    const isApiStatus = useSelector((state) => state.chat.isApiStatus);
+    const listLoading = isApiStatus?.chatListApi === 'loading';
     const isSelectedUser = useSelector((state) => state.chat.isSelectedUser);
     const groups = isChatList && isChatList?.groupList?.length > 0 ?  isChatList?.groupList.filter(item => item?.isGroupChat === true) : [];
     const userList = isChatList && isChatList?.userList?.length > 0 ? isChatList?.userList : [];
-
   return (
     <>
         <Typography variant="h6" gutterBottom>
           Groups
         </Typography>
-        <List>
+        {listLoading ? (
+          <List sx={{ maxHeight: 'calc(100vh - 650px)', overflowY: 'auto' }}>
+          {[...Array(10)].map((_, index) => (
+            <ListItem key={index}>
+              <Skeleton variant="text" width="100%" height={40} animation='wave' />
+            </ListItem>
+          ))}
+        </List>
+        ) : (
+          <List sx={{maxHeight:'calc(100vh - 650px)',overflowY:'auto'}}>
         {groups.length > 0 && 
           groups.map((item, index) => (
             <ListItem sx={{backgroundColor:isSelectedUser === item?._id ? '#FFF' : 'inherit'}} button key={index} onClick={()=>{
@@ -33,10 +43,21 @@ const ListUser = () => {
             </ListItem>
           ))}
         </List>
+        )}
+        
         <Typography variant="h6" gutterBottom>
           User
         </Typography>
-        <List>
+        {listLoading ? (
+          <List sx={{ maxHeight: 'calc(100vh - 650px)', overflowY: 'auto' }}>
+          {[...Array(10)].map((_, index) => (
+            <ListItem key={index}>
+              <Skeleton variant="text" width="100%" height={40} animation='wave' />
+            </ListItem>
+          ))}
+        </List>
+        ) : (
+        <List sx={{maxHeight:'calc(100vh - 650px)',overflowY:'auto'}}>
         {userList.length > 0 &&
             userList.map((item, index) => (
             <ListItem button sx={{backgroundColor:isSelectedUser === item?._id ? '#FFF' : 'inherit'}} key={index} onClick={()=>{
@@ -54,6 +75,7 @@ const ListUser = () => {
             </ListItem>
           ))}
         </List>
+        )}
     </>
   )
 }

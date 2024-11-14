@@ -25,7 +25,6 @@ const register = (values) => {
   });
 };
 
-
 const login = (values) => {
   const action = `/auth/login`;
   const formData = new FormData();
