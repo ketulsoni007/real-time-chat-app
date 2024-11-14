@@ -22,7 +22,6 @@ const reducer = combineReducers({
       storage,
       keyPrefix: "real-time-chat-",
       debug: false,
-      whitelist: [],
       timeout: 20000,
     },
     chatReducer

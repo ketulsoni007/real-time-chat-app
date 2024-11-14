@@ -1,47 +1,89 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import chatApiController from "../../services/chat.service";
 
-// export const authRegisterApi = createAsyncThunk('user/register', async (formValues, thunkAPI) => {
-//   try {
-//     const response = await chatApiController.register(formValues, thunkAPI);
-//     if (response && response.status === 200) {
-//       return response.data;
-//     } else {
-//       const errorMessage = (response && response.data && response.data.message) || 'Error occurred';
-//       throw new Error(errorMessage);
-//     }
-//   } catch (error) {
-//     const errorMessage =
-//       (error.response && error.response.data && error.response.data.message) || error.message || error.toString();
-//     const status = error?.response?.status ?? 410;
-//     const errors = error?.response?.data?.errors ?? '';
-//     return thunkAPI.rejectWithValue({ status: status, message: errorMessage, errors: errors });
-//   }
-// });
+export const groupCreateApi = createAsyncThunk('chat/group/create', async (formValues, thunkAPI) => {
+  try {
+    const response = await chatApiController.groupCreate(formValues, thunkAPI);
+    if (response && response.status === 200) {
+      return response.data;
+    } else {
+      const errorMessage = (response && response.data && response.data.message) || 'Error occurred';
+      throw new Error(errorMessage);
+    }
+  } catch (error) {
+    const errorMessage =
+      (error.response && error.response.data && error.response.data.message) || error.message || error.toString();
+    const status = error?.response?.status ?? 410;
+    const errors = error?.response?.data?.errors ?? '';
+    return thunkAPI.rejectWithValue({ status: status, message: errorMessage, errors: errors });
+  }
+});
 
-// export const authLoginApi = createAsyncThunk('user/login', async (formValues, thunkAPI) => {
-//   try {
-//     const response = await chatApiController.login(formValues, thunkAPI);
-//     if (response && response.status === 200) {
-//       return response.data;
-//     } else {
-//       const errorMessage = (response && response.data && response.data.message) || 'Error occurred';
-//       throw new Error(errorMessage);
-//     }
-//   } catch (error) {
-//     const errorMessage =
-//       (error.response && error.response.data && error.response.data.message) || error.message || error.toString();
-//     const status = error?.response?.status ?? 410;
-//     const errors = error?.response?.data?.errors ?? '';
-//     return thunkAPI.rejectWithValue({ status: status, message: errorMessage, errors: errors });
-//   }
-// });
+export const chatListApi = createAsyncThunk('chat/list', async (formValues, thunkAPI) => {
+  try {
+    const response = await chatApiController.chatList(formValues, thunkAPI);
+    if (response && response.status === 200) {
+      return response.data;
+    } else {
+      const errorMessage = (response && response.data && response.data.message) || 'Error occurred';
+      throw new Error(errorMessage);
+    }
+  } catch (error) {
+    const errorMessage =
+      (error.response && error.response.data && error.response.data.message) || error.message || error.toString();
+    const status = error?.response?.status ?? 410;
+    const errors = error?.response?.data?.errors ?? '';
+    return thunkAPI.rejectWithValue({ status: status, message: errorMessage, errors: errors });
+  }
+});
+
+export const chatStoreApi = createAsyncThunk('chat/store', async (formValues, thunkAPI) => {
+  try {
+    const response = await chatApiController.chatStore(formValues, thunkAPI);
+    if (response && response.status === 200) {
+      return response.data;
+    } else {
+      const errorMessage = (response && response.data && response.data.message) || 'Error occurred';
+      throw new Error(errorMessage);
+    }
+  } catch (error) {
+    const errorMessage =
+      (error.response && error.response.data && error.response.data.message) || error.message || error.toString();
+    const status = error?.response?.status ?? 410;
+    const errors = error?.response?.data?.errors ?? '';
+    return thunkAPI.rejectWithValue({ status: status, message: errorMessage, errors: errors });
+  }
+});
+
+export const chatHistoryApi = createAsyncThunk('chat/history', async (formValues, thunkAPI) => {
+  try {
+    const response = await chatApiController.chatHistory(formValues, thunkAPI);
+    if (response && response.status === 200) {
+      return response.data;
+    } else {
+      const errorMessage = (response && response.data && response.data.message) || 'Error occurred';
+      throw new Error(errorMessage);
+    }
+  } catch (error) {
+    const errorMessage =
+      (error.response && error.response.data && error.response.data.message) || error.message || error.toString();
+    const status = error?.response?.status ?? 410;
+    const errors = error?.response?.data?.errors ?? '';
+    return thunkAPI.rejectWithValue({ status: status, message: errorMessage, errors: errors });
+  }
+});
 
 const initialState = {
   isOpenGroupModel: false,
+  isGroupChat: false,
+  isSelectedUser: "",
+  isChatList: {},
+  isChatHistory: [],
   isApiStatus: {
-    // authRegisterApi: "",
-    // authLoginApi: "",
+    groupCreateApi: "",
+    chatListApi: "",
+    chatStoreApi: "",
+    chatHistoryApi: "",
   },
 };
 
@@ -50,29 +92,71 @@ const chatSlice = createSlice({
   initialState,
   reducers: {
     reset: () => initialState,
-    OpenGroupModel: (state,action) => {
+    OpenGroupModel: (state, action) => {
       state.isOpenGroupModel = action.payload;
+    },
+    SelectedUser: (state, action) => {
+      state.isSelectedUser = action.payload._id;
+      state.isGroupChat = action.payload.group;
+    },
+    MergeChats: (state, action) => {
+      const existingMessageIndex = state.isChatHistory.findIndex(
+        (message) => message._id === action.payload._id
+      );
+    
+      if (existingMessageIndex !== -1) {
+        // If message exists, update it
+        state.isChatHistory[existingMessageIndex] = action.payload;
+      } else {
+        // If message doesn't exist, push it to the array
+        state.isChatHistory.push(action.payload);
+      }
     },
   },
   extraReducers: (builder) => {
-    // builder
-    //   .addCase(authRegisterApi.pending, (state) => {
-    //     state.isApiStatus.authRegisterApi = "loading";
-    //   })
-    //   .addCase(authRegisterApi.fulfilled, (state, action) => {
-    //     state.isLoggedIn = true;
-    //     state.user = action?.payload?.user;
-    //     state.isToken = action?.payload?.token;
-    //     state.isApiStatus.authRegisterApi = "succeeded";
-    //   })
-    //   .addCase(authRegisterApi.rejected, (state) => {
-    //     state.isLoggedIn = false;
-    //     state.user = null;
-    //     state.isToken = null;
-    //     state.isApiStatus.authRegisterApi = "failed";
-    //   });
+    builder
+      .addCase(chatHistoryApi.pending, (state) => {
+        state.isApiStatus.chatHistoryApi = "loading";
+      })
+      .addCase(chatHistoryApi.fulfilled, (state, action) => {
+        state.isChatHistory = action.payload;
+        state.isApiStatus.chatHistoryApi = "succeeded";
+      })
+      .addCase(chatHistoryApi.rejected, (state) => {
+        state.isChatHistory = [];
+        state.isApiStatus.chatHistoryApi = "failed";
+      })
+      .addCase(chatStoreApi.pending, (state) => {
+        state.isApiStatus.chatStoreApi = "loading";
+      })
+      .addCase(chatStoreApi.fulfilled, (state) => {
+        state.isApiStatus.chatStoreApi = "succeeded";
+      })
+      .addCase(chatStoreApi.rejected, (state) => {
+        state.isApiStatus.chatStoreApi = "failed";
+      })
+      .addCase(chatListApi.pending, (state) => {
+        state.isApiStatus.chatListApi = "loading";
+      })
+      .addCase(chatListApi.fulfilled, (state, action) => {
+        state.isChatList = action.payload;
+        state.isApiStatus.chatListApi = "succeeded";
+      })
+      .addCase(chatListApi.rejected, (state) => {
+        state.isChatList = {};
+        state.isApiStatus.chatListApi = "failed";
+      })
+      .addCase(groupCreateApi.pending, (state) => {
+        state.isApiStatus.groupCreateApi = "loading";
+      })
+      .addCase(groupCreateApi.fulfilled, (state) => {
+        state.isApiStatus.groupCreateApi = "succeeded";
+      })
+      .addCase(groupCreateApi.rejected, (state) => {
+        state.isApiStatus.groupCreateApi = "failed";
+      });
   },
 });
 
-export const { reset, OpenGroupModel } = chatSlice.actions;
+export const { reset, OpenGroupModel, SelectedUser,MergeChats } = chatSlice.actions;
 export default chatSlice.reducer;

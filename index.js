@@ -7,7 +7,6 @@ import morgan from "morgan";
 import dotenv from "dotenv";
 import authRoute from "./routes/authRoute.js";
 import chatRoute from "./routes/chatRoute.js";
-import path from "path";
 
 const app = express();
 const server = http.createServer(app);
@@ -23,28 +22,30 @@ app.use("/api/v1/chat", chatRoute);
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173", // Update with your frontend origin
+    origin: "http://localhost:5173",
     methods: ["GET", "POST"],
     credentials: true,
   },
 });
-
-// Socket connection setup
 io.on("connection", (socket) => {
   console.log("A user connected:", socket.id);
 
-  // User joins their own room using userId
-  socket.on("join-room", (userId) => {
-    socket.join(userId);
-    console.log(`User ${socket.id} joined room ${userId}`);
+  // Join group room
+  socket.on("join-group-room", (groupId) => {
+    console.log(`User ${socket.id} joining group room ${groupId}`);
+    socket.join(groupId);
   });
 
-  // Handle disconnection
+  // Join private room
+  socket.on("join-private-room", (userId) => {
+    console.log(`User ${socket.id} joining private room for user ${userId}`);
+    socket.join(userId);
+  });
+
   socket.on("disconnect", () => {
     console.log("A user disconnected:", socket.id);
   });
 });
-
 const PORT = process.env.PORT || 8080;
 
 server.listen(PORT, "0.0.0.0", () => {

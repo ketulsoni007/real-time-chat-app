@@ -1,115 +1,72 @@
 import axios from "axios";
 import config from "../config";
 import { appAxios } from "./appAxios";
-// import {store} from "../store";
 
-const API_URL = config.API_URL;
-// // const token = store.getState().auth.isToken;
-// const storage = localStorage.getItem('estate-client-auth');
-// const tokenData = JSON.parse(storage);
-// const token = tokenData?.isToken ?? null;
-// console.log('tokenData: ', token);
-
-const register = (values) => {
-  const action = `/auth/register`;
+const groupCreate = (values) => {
+  const action = `/chat/group/store`
   const formData = new FormData();
-
-  // Append each key-value pair to the FormData object
   Object.keys(values).forEach((key) => {
     if (Array.isArray(values[key])) {
-      values[key].forEach((file) => {
-        formData.append(key, file);
-      });
-    } else {
-      formData.append(key, values[key]);
-    }
-  });
-  formData.append('requests', 'client');
-  // Note: Do not set Content-Type header for FormData; Axios handles it
-  return axios.post(API_URL + action, formData);
-};
-
-const profilesUpdates = (values) => {
-  const action = `/auth/update`;
-  const formData = new FormData();
-
-  // Append each key-value pair to the FormData object
-  Object.keys(values).forEach((key) => {
-    if (Array.isArray(values[key])) {
-      values[key].forEach((file) => {
-        formData.append(key, file);
-      });
+      formData.append(key, JSON.stringify(values[key]));
     } else {
       formData.append(key, values[key]);
     }
   });
 
-  // Note: Do not set Content-Type header for FormData; Axios handles it
-  return axios.post(API_URL + action, formData, {
+  return appAxios.post(action, formData, {
     headers: {
-      "Authorization": `Bearer ${values?.token}`
+     "Content-Type": "application/json",
     },
-  }
-  );
+  });
 };
 
-
-const login = (values) => {
-  const action = `/auth/login`;
+const chatStore = (values) => {
+  const action = `/chat/message`
   const formData = new FormData();
   Object.keys(values).forEach((key) => {
-    formData.append(key, values[key]);
+    if (Array.isArray(values[key])) {
+      formData.append(key, JSON.stringify(values[key]));
+    } else {
+      formData.append(key, values[key]);
+    }
   });
-  formData.append('requests', 'client');
-  return axios.post(API_URL + action, formData, {
+
+  return appAxios.post(action, formData, {
     headers: {
-      "Content-Type": "application/json"
+     "Content-Type": "application/json",
     },
   });
 };
 
-const roles = (values) => {
-  const action = `/auth/roles`;
-  return axios.get(API_URL + action);
-};
+const chatHistory = (values) => {
+  const action = `/chat/history`
+  const formData = new FormData();
+  Object.keys(values).forEach((key) => {
+    if (Array.isArray(values[key])) {
+      formData.append(key, JSON.stringify(values[key]));
+    } else {
+      formData.append(key, values[key]);
+    }
+  });
 
-const update = (formData, token) => {
-  const id = formData && formData.id ? formData.id : "";
-  const action = `/user/update-user/${id}`;
-
-  return axios.put(API_URL + action, formData, {
+  return appAxios.post(action, formData, {
     headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`
+     "Content-Type": "application/json",
     },
   });
 };
 
-const logoutservice = (token) => {
-  return appAxios.get('/auth/logout');
-};
-
-const passwords = (formData) => {
-  const id = formData && formData.id ? formData.id : "";
-  const action = `/auth/password`;
-
-  return axios.post(API_URL + action, formData, {
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${formData?.token}`
-    },
-  });
+const chatList = (values) => {
+  const action = `/chat/alluser/list?name=${values?.name}`
+  return appAxios.get(action);
 };
 
 
 const chatApiController = {
-  register,
-  login,
-  logoutservice,
-  roles,
-  profilesUpdates,
-  update,
-  passwords
+  groupCreate,
+  chatList,
+  chatStore,
+  chatHistory
 };
 
 export default chatApiController;

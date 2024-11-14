@@ -1,15 +1,20 @@
 import React, { useState } from 'react';
 import { Formik, Field, Form, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { TextField, Button, Typography, Box, Card, CardContent, IconButton, InputAdornment } from '@mui/material';
+import Grid2 from '@mui/material/Grid2';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import { NavLink } from 'react-router-dom';
+import { authRegisterApi } from '../store/Slices/authSlice';
 import { useDispatch } from 'react-redux';
-import { authLoginApi } from '../store/Slices/authSlice';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const validationSchema = Yup.object({
     email: Yup.string()
         .email('Invalid email address')
         .required('Email is required'),
+    name: Yup.string()
+        .required('Name is required'),
     password: Yup.string()
         .min(6, 'Password must be at least 6 characters')
         .required('Password is required'),
@@ -17,18 +22,18 @@ const validationSchema = Yup.object({
 
 const Signup = () => {
     const dispatch = useDispatch();
-    const navigate = useNavigate();
     const [message, setMessage] = useState('');
     const [showPassword, setShowPassword] = useState(false);
 
     const initialValues = {
+        name: '',
         email: '',
         password: '',
     };
 
     const handleSubmit = async (values, { setSubmitting, setErrors }) => {
         try {
-            dispatch(authLoginApi(values)).then(action => {
+            dispatch(authRegisterApi(values)).then(action => {
                 if (action.meta.requestStatus === 'fulfilled') {
                     navigate('/');
                 } else if (action.meta.requestStatus === 'rejected') {
@@ -58,69 +63,90 @@ const Signup = () => {
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-100">
-            <div className="w-full sm:w-1/2 md:w-1/3 bg-white p-6 rounded-lg shadow-md">
-                <h2 className="text-center text-2xl font-semibold mb-4">Login</h2>
-                <Formik
-                    initialValues={initialValues}
-                    validationSchema={validationSchema}
-                    onSubmit={handleSubmit}
-                >
-                    {({ touched, errors }) => (
-                        <Form>
-                            <div className="mb-4">
-                                <Field
-                                    name="email"
-                                    className="w-full p-2 border border-gray-300 rounded-md"
-                                    placeholder="Email"
-                                />
-                                {touched.email && errors.email && (
-                                    <div className="text-red-500 text-sm">{errors.email}</div>
-                                )}
-                            </div>
+        <Grid2 container justifyContent="center" alignItems="center" sx={{ minHeight: '100vh' }}>
+            <Grid2 item size={{ xs: 12, sm: 6, md: 4 }}>
+                <Card>
+                    <CardContent sx={{ padding: 3 }}>
+                        <Typography variant="h5" gutterBottom align="center">
+                            Register
+                        </Typography>
+                        <Formik
+                            initialValues={initialValues}
+                            validationSchema={validationSchema}
+                            onSubmit={handleSubmit}
+                        >
+                            {({ setFieldValue, touched, errors }) => (
+                                <Form>
+                                    <Grid2 container spacing={2} direction="column">
+                                        <Grid2 item size={12}>
+                                            <Field
+                                                name="name"
+                                                as={TextField}
+                                                label="Name"
+                                                fullWidth
+                                                variant="outlined"
+                                                size="small"
+                                                helperText={<ErrorMessage name="name" />}
+                                                error={touched?.name && errors?.name}
+                                            />
+                                        </Grid2>
+                                        <Grid2 item size={12}>
+                                            <Field
+                                                name="email"
+                                                as={TextField}
+                                                label="Email"
+                                                fullWidth
+                                                variant="outlined"
+                                                size="small"
+                                                helperText={<ErrorMessage name="email" />}
+                                                error={touched?.email && errors?.email}
+                                            />
+                                        </Grid2>
 
-                            <div className="mb-4 relative">
-                                <Field
-                                    name="password"
-                                    className="w-full p-2 border border-gray-300 rounded-md"
-                                    type={showPassword ? 'text' : 'password'}
-                                    placeholder="Password"
-                                />
-                                <div
-                                    className="absolute right-2 top-2 cursor-pointer"
-                                    onClick={handleClickShowPassword}
-                                >
-                                    {showPassword ? <FaEyeSlash /> : <FaEye />}
-                                </div>
-                                {touched.password && errors.password && (
-                                    <div className="text-red-500 text-sm">{errors.password}</div>
-                                )}
-                            </div>
+                                        <Grid2 item xs={12}>
+                                            <Field
+                                                name="password"
+                                                as={TextField}
+                                                label="Password"
+                                                fullWidth
+                                                type={showPassword ? 'text' : 'password'}
+                                                variant="outlined"
+                                                size="small"
+                                                helperText={<ErrorMessage name="password" />}
+                                                error={touched?.password && errors?.password}
+                                                InputProps={{
+                                                    endAdornment: (
+                                                        <InputAdornment position="end">
+                                                            <IconButton
+                                                                onClick={handleClickShowPassword}
+                                                                edge="end"
+                                                                aria-label="toggle password visibility"
+                                                            >
+                                                                {showPassword ? <VisibilityOff /> : <Visibility />}
+                                                            </IconButton>
+                                                        </InputAdornment>
+                                                    ),
+                                                }}
+                                            />
+                                        </Grid2>
 
-                            <div className="mb-4">
-                                <button
-                                    type="submit"
-                                    className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600"
-                                >
-                                    Login
-                                </button>
-                            </div>
-
-                            <div className="text-center">
-                                <p className="text-sm">
-                                    Don't have an account?{' '}
-                                    <NavLink to="/signup" className="text-blue-500">
-                                        Sign up here
-                                    </NavLink>
-                                </p>
-                            </div>
-
-                            {message && <p className="text-center text-red-500 mt-4">{message}</p>}
-                        </Form>
-                    )}
-                </Formik>
-            </div>
-        </div>
+                                        <Grid2 item xs={12}>
+                                            <Button type="submit" variant="contained" color="primary" fullWidth size="small">
+                                                Register
+                                            </Button>
+                                        </Grid2>
+                                        <Typography variant='body2'>Already have an account <NavLink to={'/signin'} replace={true}>Login here</NavLink></Typography>
+                                        {message ? (
+                                            <Typography variant='body2' color='error'>{message}</Typography>
+                                        ) : null}
+                                    </Grid2>
+                                </Form>
+                            )}
+                        </Formik>
+                    </CardContent>
+                </Card>
+            </Grid2>
+        </Grid2>
     );
 };
 

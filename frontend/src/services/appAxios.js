@@ -7,7 +7,7 @@ export const appAxios = axios.create({
 
 appAxios.interceptors.request.use(
     (config) => {
-        const storage = localStorage.getItem('estate-client-auth');
+        const storage = localStorage.getItem('real-time-chat-auth');
         const tokenData = storage ? JSON.parse(storage) : {};
         let token = tokenData?.isToken || null;
         if (token) {

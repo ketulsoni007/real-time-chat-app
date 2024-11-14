@@ -3,55 +3,200 @@ import messageSchema from "../models/Message.js";
 import userSchema from "../models/User.js";
 import { io } from "../index.js";
 
+// export const sendMessageController = async (req, res) => {
+//   try {
+//     const { userId } = req;
+//     const { content, isGroupChat, receiver,groupId } = req.body;
+//     if (isGroupChat == true || isGroupChat === 'true') {
+//       const groupChat = await chatSchema.findById(groupId).populate('users');
+//       if (!groupChat) {
+//         return res.status(404).json({ message: "Group chat not found" });
+//       }
+//       const newMessage = new messageSchema({
+//         sender: userId,
+//         content,
+//         chatId: groupChat?._id, // Group chat ID
+//       });
+
+//       // Save the new message to the database
+//       await newMessage.save();
+
+//       // Update the latestMessage field in the chat document
+//       groupChat.latestMessage = newMessage._id;
+//       await groupChat.save();
+
+//       return res.status(200).json({ message: "Message sent successfully", data: newMessage });
+//     } 
+//     // For 1-on-1 (personal) chat
+//     else {
+//       // Check if a chat already exists between the two users
+//       let personalChat = await chatSchema.findOne({
+//         isGroupChat: false,
+//         users: { $all: [userId, receiver] },
+//       });
+
+//       // If no existing chat, create a new chat between the two users
+//       if (!personalChat) {
+//         personalChat = new chatSchema({
+//           isGroupChat: false,
+//           users: [userId, receiver],
+//         });
+//         await personalChat.save();
+//       }
+
+//       // Create a new message document
+//       const newMessage = new messageSchema({
+//         sender: userId,
+//         content,
+//         chatId: personalChat._id, // Personal chat ID
+//       });
+
+//       // Save the new message to the database
+//       await newMessage.save();
+
+//       // Update the latestMessage field in the chat document
+//       personalChat.latestMessage = newMessage._id;
+//       await personalChat.save();
+
+//       return res.status(200).json({ message: "Message sent successfully", data: newMessage });
+//     }
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(500).json({ message: "Error sending message", error });
+//   }
+// };
+
 export const sendMessageController = async (req, res) => {
   try {
-      const { senderId, receiverId, message, room } = req.body;
-      const sender = await userSchema.findById(senderId);
-      if (!sender) {
-          return res.status(404).json({ message: "Sender not found" });
+    const { userId } = req;
+    const { content, isGroupChat, receiver, groupId } = req.body;
+
+    // Group Chat
+    if (isGroupChat === true || isGroupChat === 'true') {
+      const groupChat = await chatSchema.findById(groupId).populate('users');
+      if (!groupChat) {
+        return res.status(404).json({ message: "Group chat not found" });
       }
-      let receiver;
-      if (!room) {
-          receiver = await userSchema.findById(receiverId);
-          if (!receiver) {
-              return res.status(404).json({ message: "Receiver not found" });
-          }
-          const newMessage = new chatSchema({
-              sender: sender._id,
-              receiver: receiver._id,
-              message,
-              status: "sent",
-          });
-          await newMessage.save();
-      }
-      if (room) {
-          const roomExists = io.sockets.adapter.rooms.get(room);
-          if (!roomExists) {
-              return res.status(404).json({ message: "Room not found" });
-          }
-          const newGroupMessage = new chatSchema({
-              sender: sender._id,
-              receiver: room,
-              message,
-              status: "sent",
-          });
-          await newGroupMessage.save();
-          io.to(room).emit("receive-message", {
-              sender: sender.name,
-              message,
-              room,
-          });
-      } else {
-          io.to(receiverId).emit("receive-message", {
-              sender: sender.name,
-              message,
-              room: null,
-          });
-      }
-      return res.status(200).json({ message: "messageSchema sent successfully" });
+
+      // Create and Save New Message
+      const newMessage = new messageSchema({
+        sender: userId,
+        content,
+        chatId: groupChat._id, // Group chat ID
+      });
+      await newMessage.save();
+
+      // Update Latest Message
+      groupChat.latestMessage = newMessage._id;
+      await groupChat.save();
+
+      // Emit the message to the specific group room
+      io.to(groupId).emit("receive_message", {
+        _id: newMessage._id,
+        sender: { _id: userId },
+        content,
+        createdAt: newMessage.createdAt,
+        isGroupChat: true,
+        chatId: groupChat._id,
+      });
+
+      return res.status(200).json({ message: "Message sent successfully", data: newMessage });
+    }
+
+    // Private Chat
+    let personalChat = await chatSchema.findOne({
+      isGroupChat: false,
+      users: { $all: [userId, receiver] },
+    });
+
+    // Create new chat if it doesn't exist
+    if (!personalChat) {
+      personalChat = new chatSchema({
+        isGroupChat: false,
+        users: [userId, receiver],
+      });
+      await personalChat.save();
+    }
+
+    // Create and Save New Message
+    const newMessage = new messageSchema({
+      sender: userId,
+      content,
+      chatId: personalChat._id, // Personal chat ID
+    });
+    await newMessage.save();
+
+    // Update Latest Message
+    personalChat.latestMessage = newMessage._id;
+    await personalChat.save();
+
+    // Emit the message to the specific receiver's room
+    io.to(receiver).emit("receive_message", {
+      _id: newMessage._id,
+      sender: { _id: userId },
+      content,
+      createdAt: newMessage.createdAt,
+      isGroupChat: false,
+      chatId: personalChat._id,
+    });
+
+    return res.status(200).json({ message: "Message sent successfully", data: newMessage });
   } catch (error) {
-      console.error(error);
-      return res.status(500).json({ message: "Error sending message", error });
+    console.error(error);
+    return res.status(500).json({ message: "Error sending message", error });
+  }
+};
+
+export const getChatHistoryController = async (req, res) => {
+  const { userId } = req;
+  const { isGroupChat, receiver, groupId } = req.body;
+  try {
+    let chatHistory;
+    if (isGroupChat === true || isGroupChat === 'true') {
+      if (!groupId) {
+        return res.status(400).json({ message: "Group ID is required for group chats" });
+      }
+
+      // Find the group chat by `groupId`
+      const groupChat = await chatSchema.findOne({
+        _id: groupId,
+        isGroupChat: true,
+      }).populate("users", "name email");
+
+      if (!groupChat) {
+        return res.status(404).json({ message: "Group chat not found" });
+      }
+
+      // Fetch messages for the group chat
+      chatHistory = await messageSchema.find({
+        chatId: groupChat._id,
+      }).populate("sender", "name email").sort({ createdAt: 1 }); // Sort by time (ascending)
+
+    } else {
+      // If it is a private chat, fetch messages between `userId` and `receiver`
+      if (!receiver) {
+        return res.status(400).json({ message: "Receiver ID is required for private chats" });
+      }
+
+      // Find the private chat between two users
+      const privateChat = await chatSchema.findOne({
+        isGroupChat: false,
+        users: { $all: [userId, receiver] }, // Ensure both users are in the chat
+      }).populate("users", "name email");
+
+      if (!privateChat) {
+        return res.status(404).json([]);
+      }
+
+      // Fetch messages for the private chat
+      chatHistory = await messageSchema.find({
+        chatId: privateChat._id,
+      }).populate("sender", "name email").sort({ createdAt: 1 }); // Sort by time (ascending)
+    }
+    return res.status(200).json(chatHistory);
+  } catch (error) {
+    console.error("Error fetching chat history:", error);
+    return res.status(500).json({ message: "Error fetching chat history", error });
   }
 };
 

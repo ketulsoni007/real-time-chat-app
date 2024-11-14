@@ -36,14 +36,33 @@ export const authLoginApi = createAsyncThunk('user/login', async (formValues, th
     return thunkAPI.rejectWithValue({ status: status, message: errorMessage, errors: errors });
   }
 });
+export const userListApi = createAsyncThunk('user/list', async (formValues, thunkAPI) => {
+  try {
+    const response = await authApiController.list(formValues, thunkAPI);
+    if (response && response.status === 200) {
+      return response.data;
+    } else {
+      const errorMessage = (response && response.data && response.data.message) || 'Error occurred';
+      throw new Error(errorMessage);
+    }
+  } catch (error) {
+    const errorMessage =
+      (error.response && error.response.data && error.response.data.message) || error.message || error.toString();
+    const status = error?.response?.status ?? 410;
+    const errors = error?.response?.data?.errors ?? '';
+    return thunkAPI.rejectWithValue({ status: status, message: errorMessage, errors: errors });
+  }
+});
 
 const initialState = {
   isLoggedIn: false,
   user: null,
   isToken: "",
+  isUserList:[],
   isApiStatus: {
     authRegisterApi: "",
     authLoginApi: "",
+    userListApi:'',
   },
 };
 
@@ -60,6 +79,17 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(userListApi.pending, (state) => {
+        state.isApiStatus.userListApi = "loading";
+      })
+      .addCase(userListApi.fulfilled, (state, action) => {
+        state.isUserList = action?.payload;
+        state.isApiStatus.userListApi = "succeeded";
+      })
+      .addCase(userListApi.rejected, (state) => {
+        state.isUserList = [];
+        state.isApiStatus.userListApi = "failed";
+      })
       .addCase(authRegisterApi.pending, (state) => {
         state.isApiStatus.authRegisterApi = "loading";
       })

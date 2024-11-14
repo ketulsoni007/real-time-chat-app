@@ -1,12 +1,13 @@
 import { Avatar, List, ListItem, ListItemIcon, ListItemText, Typography } from '@mui/material';
 import React from 'react'
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { chatHistoryApi, SelectedUser } from '../store/Slices/chatSlice';
 
 const ListUser = () => {
+  const dispatch = useDispatch();
     const isChatList = useSelector((state) => state.chat.isChatList);
-    console.log('isChatList: ', isChatList);
-    const groups = isChatList && isChatList?.groupList?.length > 0 ? isChatList?.groupList : [];
-    console.log('groups: ', groups);
+    const isSelectedUser = useSelector((state) => state.chat.isSelectedUser);
+    const groups = isChatList && isChatList?.groupList?.length > 0 ?  isChatList?.groupList.filter(item => item?.isGroupChat === true) : [];
     const userList = isChatList && isChatList?.userList?.length > 0 ? isChatList?.userList : [];
 
   return (
@@ -15,9 +16,12 @@ const ListUser = () => {
           Groups
         </Typography>
         <List>
-        {groups.length > 0 &&
+        {groups.length > 0 && 
           groups.map((item, index) => (
-            <ListItem button key={index}>
+            <ListItem sx={{backgroundColor:isSelectedUser === item?._id ? '#FFF' : 'inherit'}} button key={index} onClick={()=>{
+              dispatch(SelectedUser({_id:item?._id,group:true}));
+              dispatch(chatHistoryApi({isGroupChat:true,groupId:item?._id}));
+            }}>
             <ListItemIcon>
                 <Avatar>{item?.groupName?.charAt(0)}</Avatar>
               </ListItemIcon>
@@ -35,7 +39,10 @@ const ListUser = () => {
         <List>
         {userList.length > 0 &&
             userList.map((item, index) => (
-            <ListItem button key={index}>
+            <ListItem button sx={{backgroundColor:isSelectedUser === item?._id ? '#FFF' : 'inherit'}} key={index} onClick={()=>{
+              dispatch(SelectedUser({_id:item?._id,group:false}))
+              dispatch(chatHistoryApi({isGroupChat:false,groupId:null,receiver:item?._id}));
+            }}>
             <ListItemIcon>
                 <Avatar>{item?.user_name?.charAt(0)}</Avatar>
               </ListItemIcon>
